@@ -1,8 +1,8 @@
 """Streamlit dashboard: the PM/growth view of the GenAI product.
 
-KPI header + five tabbed sections (Adoption, Retention, Features, AI Quality, Unit Economics)
-over the synthetic dataset, with plan/feature/date filters. The v2-launch date is annotated on
-the time series so the growth-vs-cost-vs-quality tradeoff is visible at a glance.
+KPI header + six tabbed sections (Adoption, Retention, Features, AI Quality, Unit Economics,
+Experiments) over the synthetic dataset, with plan/feature/date filters. The v2-launch date is
+annotated on the time series so the growth-vs-cost-vs-quality tradeoff is visible at a glance.
 
 Run:  uv run streamlit run app.py
 """
@@ -15,6 +15,7 @@ import streamlit as st
 
 from ai_product_analytics import metrics as m
 from ai_product_analytics.data import MODEL_CHANGE, PRODUCT, QUALITY_RECOVERY, generate
+from ai_product_analytics.experiments import ab_results, generate_assignments
 
 st.set_page_config(page_title="AI Product Analytics", layout="wide", page_icon="📈")
 
@@ -26,7 +27,7 @@ FIX = dt.datetime.combine(QUALITY_RECOVERY, dt.time())
 @st.cache_data
 def load():
     ds = generate()
-    return ds.users, ds.sessions
+    return ds.users, ds.sessions, generate_assignments(ds.users)
 
 
 def _mark_v2(fig: go.Figure, show_fix: bool = False) -> None:
@@ -45,7 +46,7 @@ def _layout(fig: go.Figure, height: int = 340) -> go.Figure:
     return fig
 
 
-users, sessions = load()
+users, sessions, assignments = load()
 
 # ---- Filters -------------------------------------------------------------------------------
 st.sidebar.header("Filters")
@@ -99,8 +100,15 @@ k[5].metric(
     "Cost / session", f"${e['cost_per_session']:.4f}", delta=cost_delta, delta_color="inverse"
 )
 
-tab_adopt, tab_ret, tab_feat, tab_qual, tab_econ = st.tabs(
-    ["📊 Adoption", "🔁 Retention", "🧩 Features", "✅ AI Quality", "💵 Unit Economics"]
+tab_adopt, tab_ret, tab_feat, tab_qual, tab_econ, tab_exp = st.tabs(
+    [
+        "📊 Adoption",
+        "🔁 Retention",
+        "🧩 Features",
+        "✅ AI Quality",
+        "💵 Unit Economics",
+        "🧪 Experiments",
+    ]
 )
 
 # ---- Adoption ------------------------------------------------------------------------------
@@ -262,3 +270,45 @@ with tab_econ:
     )
     st.subheader(f"Spend by {dim}")
     st.plotly_chart(_layout(figb, 280), width="stretch")
+
+# ---- Experiments ---------------------------------------------------------------------------
+with tab_exp:
+    st.caption(
+        "Randomized A/B readouts with two-proportion z-tests (95% CI). Enrollment is independent "
+        "of the sidebar filters. Decision rule: ship on a significant positive lift, stop on a "
+        "significant negative one, otherwise keep testing."
+    )
+    rows = ab_results(assignments).to_dicts()
+    colors = {"Ship 🚀": "#00b894", "Stop 🛑": "#e17055", "Keep testing ⏳": "#95a5a6"}
+
+    fig = go.Figure(
+        go.Scatter(
+            x=[r["abs_lift"] * 100 for r in rows],
+            y=[r["name"] for r in rows],
+            mode="markers",
+            marker=dict(size=13, color=[colors[r["decision"]] for r in rows]),
+            error_x=dict(
+                type="data",
+                array=[(r["ci_high"] - r["ci_low"]) / 2 * 100 for r in rows],
+                color="#888",
+            ),
+            hovertemplate="%{y}: %{x:+.1f} pp<extra></extra>",
+        )
+    )
+    fig.add_vline(x=0, line_dash="dash", line_color="#888")
+    fig.update_layout(xaxis_title="Lift vs control (percentage points, 95% CI)")
+    st.subheader("Experiment lift — does the confidence interval clear zero?")
+    st.plotly_chart(_layout(fig, 260), width="stretch")
+
+    for r in rows:
+        st.markdown(f"#### {r['name']}  ·  {r['decision']}")
+        st.caption(r["hypothesis"])
+        cols = st.columns(5)
+        cols[0].metric(f"Control {r['metric']}", f"{r['rate_control']:.1%}")
+        delta = f"{r['abs_lift'] * 100:+.1f} pp"
+        cols[1].metric("Treatment", f"{r['rate_treatment']:.1%}", delta=delta)
+        cols[2].metric("Relative lift", f"{r['rel_lift']:+.1%}")
+        cols[3].metric("p-value", f"{r['p_value']:.3f}")
+        cols[4].metric("Sample (C / T)", f"{r['n_control']:,} / {r['n_treatment']:,}")
+        st.caption(f"95% CI on lift: [{r['ci_low'] * 100:+.1f}, {r['ci_high'] * 100:+.1f}] pp")
+        st.divider()

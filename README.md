@@ -3,7 +3,7 @@
 [![CI](https://github.com/himanshutamboli/ai-product-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/himanshutamboli/ai-product-analytics/actions/workflows/ci.yml)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![Ruff](https://img.shields.io/badge/lint-ruff-orange.svg)](https://github.com/astral-sh/ruff)
-[![version](https://img.shields.io/badge/version-v1.0-brightgreen.svg)](#roadmap)
+[![version](https://img.shields.io/badge/version-v1.1-brightgreen.svg)](#roadmap)
 
 > The **PM / growth analytics** view of a live GenAI product — North Star + adoption, retention
 > cohorts, feature funnels, AI quality & CSAT, and unit economics — in one Streamlit dashboard.
@@ -35,8 +35,9 @@ answer quality dips (recovering after the fix two weeks later) while **cost per 
 - **Features** — feature reach + the signup → activated → engaged → retained activation funnel.
 - **AI quality** — answer-quality & CSAT trend, refusal & containment rates.
 - **Unit economics** — token spend and cost per active user / session, broken down by plan/model/feature.
+- **Experiments** — randomized A/B readouts with **two-proportion z-tests**: lift, 95% CI, p-value, and a ship / stop / keep-testing decision.
 
-Plan / feature / date filters flow through every view.
+Plan / feature / date filters flow through every view (experiments have their own enrollment).
 
 ## Architecture
 
@@ -70,6 +71,7 @@ uv run pytest
 | 2 ✅ | Metrics package: adoption, retention cohorts, feature funnel, AI quality, unit economics |
 | 3 ✅ | Streamlit dashboard: KPI header + 5 tabbed sections (adoption/retention/features/quality/economics) with filters |
 | 4 ✅ | Docs + demo screenshot; **shipped v1.0** |
+| 5 ✅ | A/B experimentation view — two-proportion z-tests, CIs, ship/stop/keep-testing decisions (**v1.1**) |
 
 ## License
 

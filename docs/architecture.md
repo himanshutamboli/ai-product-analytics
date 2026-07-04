@@ -46,6 +46,7 @@ dashboard is built to surface — the same technique that makes `llm-observatory
 | **CSAT** | 👍 share *among rated sessions* — `up / (up + down)`; unrated sessions don't count. |
 | **Refusal / containment** | Share of sessions the assistant refused / resolved without escalation. |
 | **Cost per active user** | Daily spend ÷ daily distinct actives (DAU) — the metric that shows whether a capability upgrade stays affordable as usage scales. |
+| **A/B lift & significance** | Treatment − control on a binary success metric, tested with a **two-proportion z-test** (normal CDF via `math.erf`, no scipy). Reports absolute/relative lift, a 95% CI on the lift, a p-value, and a ship/stop/keep-testing decision. See `experiments.py`. |
 
 ## Design decisions
 
@@ -68,6 +69,7 @@ dashboard is built to surface — the same technique that makes `llm-observatory
 
 - Synthetic data models a plausible product, not a real one; the schema is shaped so a real
   event stream (or a query over `llm-observatory` traces) could drop in behind the metrics.
-- No statistical significance / experimentation layer — feature and cohort comparisons are
-  descriptive. An A/B readout view is the natural next addition.
 - Retention is session-based; revenue/expansion retention would need a billing table.
+- The A/B layer (`experiments.py`) uses a two-proportion z-test for binary metrics; continuous
+  metrics (e.g. cost/session) would want a Welch's t-test, and sequential testing would need
+  alpha-spending. Both are natural extensions.

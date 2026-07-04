@@ -1,6 +1,6 @@
 [project]
 name = "ai-product-analytics"
-version = "1.0.0"
+version = "1.1.0"
 description = "GenAI product growth-analytics dashboard: adoption, retention, feature funnels, AI quality, unit economics."
 readme = "README.md"
 requires-python = ">=3.13"
