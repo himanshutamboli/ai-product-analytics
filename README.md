@@ -42,7 +42,7 @@ uv run pytest
 |---|---|
 | 1 ✅ | Synthetic GenAI-product dataset (users + sessions) with a built-in growth/quality/cost narrative |
 | 2 ✅ | Metrics package: adoption, retention cohorts, feature funnel, AI quality, unit economics |
-| 3 | Streamlit dashboard: KPI header + sectioned analytics with filters |
+| 3 ✅ | Streamlit dashboard: KPI header + 5 tabbed sections (adoption/retention/features/quality/economics) with filters |
 | 4 | Docs + demo screenshot; ship v1.0 |
 
 ## License
